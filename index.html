@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Keuangan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+        }
+        
+        @layer utilities {
+            .scrollbar::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            
+            .scrollbar::-webkit-scrollbar-track {
+                background: #f1f8e9;
+            }
+            
+            .scrollbar::-webkit-scrollbar-thumb {
+                background: #8bc34a;
+                border-radius: 100vh;
+            }
+            
+            .scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #689f38;
+            }
+            
+            .print-hidden {
+                display: block;
+            }
+            
+            @media print {
+                .print-hidden {
+                    display: none !important;
+                }
+                
+                body {
+                    background: white !important;
+                    padding: 0 !important;
+                }
+                
+                .container {
+                    max-width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                
+                .card {
+                    box-shadow: none !important;
+                    border: 1px solid #ddd !important;
+                    page-break-inside: avoid;
+                }
+                
+                table {
+                    width: 100% !important;
+                    font-size: 12px !important;
+                }
+                
+                th, td {
+                    padding: 6px 8px !important;
+                }
+                
+                header {
+                    text-align: center;
+                    margin-bottom: 10px !important;
+                }
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-6" style="background: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('https://miftahussunnahsmg.org/wp-content/uploads/2023/07/IMG_6044-1.jpg') center/cover fixed;">
+    <div class="container mx-auto max-w-7xl">
+        <!-- Header -->
+        <header class="bg-white rounded-xl shadow-md p-6 text-center mb-8 relative">
+            <div class="absolute left-6 top-6 w-16 h-16">
+                <img src="https://miftahussunnahsmg.org/wp-content/uploads/2022/08/looogooo-yys-as-Smart-Object-1.png" 
+                     alt="Logo" class="w-full h-full object-contain">
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold text-green-700 mb-2">
+                <i class="fas fa-money-bill-wave mr-2"></i>Laporan Keuangan
+            </h1>
+            <p class="text-green-500 font-medium">Yayasan Miftahus Sunnah Semarang</p>
+        </header>
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-green-500">
+                <div class="flex justify-center">
+                    <i class="fas fa-arrow-down text-3xl text-green-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-green-600 text-center my-3" id="total-income">Rp 0</div>
+                <div class="text-sm text-gray-500 text-center">Total Pemasukan</div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-red-500">
+                <div class="flex justify-center">
+                    <i class="fas fa-arrow-up text-3xl text-red-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-red-600 text-center my-3" id="total-expense">Rp 0</div>
+                <div class="text-sm text-gray-500 text-center">Total Pengeluaran</div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-yellow-500">
+                <div class="flex justify-center">
+                    <i class="fas fa-wallet text-3xl text-yellow-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-yellow-600 text-center my-3" id="balance">Rp 0</div>
+                <div class="text-sm text-gray-500 text-center">Saldo</div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Input Section -->
+            <div class="print-hidden">
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-bold text-green-700 mb-4 flex items-center">
+                        <i class="fas fa-plus-circle mr-2"></i> Input Transaksi Baru
+                    </h2>
+                    
+                    <form id="transaction-form">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2" for="type">Jenis Transaksi</label>
+                            <select id="type" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-500" required>
+                                <option value="">Pilih Jenis</option>
+                                <option value="income">Pemasukan</option>
+                                <option value="expense">Pengeluaran</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2" for="category">Kategori</label>
+                            <select id="category" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-500" required>
+                                <option value="">Pilih Kategori</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2" for="amount">Jumlah (Rp)</label>
+                            <input type="number" id="amount" min="0" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-500" required placeholder="Masukkan jumlah uang">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2" for="description">Keterangan</label>
+                            <textarea id="description" rows="3" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-500" placeholder="Masukkan keterangan transaksi"></textarea>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-medium mb-2" for="date">Tanggal</label>
+                            <input type="date" id="date" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-500" required>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button type="button" id="submit-income" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex-1 flex items-center justify-center transition">
+                                <i class="fas fa-plus mr-2"></i> Tambah Pemasukan
+                            </button>
+                            <button type="button" id="submit-expense" class="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex-1 flex items-center justify-center transition">
+                                <i class="fas fa-minus mr-2"></i> Tambah Pengeluaran
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Chart Section -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold text-green-700 mb-4 flex items-center">
+                        <i class="fas fa-chart-pie mr-2"></i> Diagram Pengeluaran per Kategori
+                    </h2>
+                    <div class="h-64 md:h-80">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Report Section -->
+            <div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold text-green-700 mb-4 flex items-center">
+                        <i class="fas fa-chart-bar mr-2"></i> Laporan Keuangan
+                    </h2>
+                    
+                    <!-- Filters -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 print-hidden">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1" for="report-type">Jenis</label>
+                            <select id="report-type" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-green-300 focus:border-green-500">
+                                <option value="all">Semua</option>
+                                <option value="income">Pemasukan</option>
+                                <option value="expense">Pengeluaran</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1" for="report-category">Kategori</label>
+                            <select id="report-category" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-green-300 focus:border-green-500">
+                                <option value="all">Semua Kategori</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1" for="start-date">Dari Tanggal</label>
+                            <input type="date" id="start-date" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-green-300 focus:border-green-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-1" for="end-date">Sampai Tanggal</label>
+                            <input type="date" id="end-date" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-green-300 focus:border-green-500">
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-2 mb-4 print-hidden">
+                        <button id="sort-income" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium py-2 px-3 rounded-lg flex items-center transition">
+                            <i class="fas fa-sort-amount-up mr-1"></i> Pemasukan Terbesar
+                        </button>
+                        <button id="sort-expense" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium py-2 px-3 rounded-lg flex items-center transition">
+                            <i class="fas fa-sort-amount-down mr-1"></i> Pengeluaran Terbesar
+                        </button>
+                        <button id="reset-filters" class="bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium py-2 px-3 rounded-lg flex items-center transition">
+                            <i class="fas fa-sync mr-1"></i> Reset Filter
+                        </button>
+                        <button id="print-report" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-3 rounded-lg flex items-center transition">
+                            <i class="fas fa-print mr-1"></i> Cetak
+                        </button>
+                    </div>
+                    
+                    <!-- Report Table -->
+                    <div class="overflow-x-auto scrollbar">
+                        <table id="report-table" class="w-full">
+                            <thead class="bg-green-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-green-800">Tanggal</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-green-800">Jenis</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-green-800">Kategori</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-green-800">Jumlah</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-green-800">Keterangan</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-green-800 print-hidden">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-body" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-gray-500 italic">Belum ada data transaksi</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyALI0mFJo4yrjaedMqfJOB4ddTJYuBvRHE",
+            authDomain: "lapkeu-145e1.firebaseapp.com",
+            databaseURL: "https://lapkeu-145e1-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "lapkeu-145e1",
+            storageBucket: "lapkeu-145e1.firebasestorage.app",
+            messagingSenderId: "39079051298",
+            appId: "1:39079051298:web:f58f9d9dea19e190da8a7b",
+            measurementId: "G-JMKDRMKW33"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Data initialization
+        const categories = {
+            income: [
+                "SPP",
+                "Uang Gedung", 
+                "Lain-lain"
+            ],
+            expense: [
+                "Gaji Pengurus",
+                "Wakaf",
+                "Konsumsi Rapat",
+                "Lain-lain"
+            ]
+        };
+
+        let transactions = [];
+        let expenseChart = null;
+
+        // DOM Elements
+        const transactionForm = document.getElementById('transaction-form');
+        const typeSelect = document.getElementById('type');
+        const categorySelect = document.getElementById('category');
+        const reportCategorySelect = document.getElementById('report-category');
+        const reportTypeSelect = document.getElementById('report-type');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const reportBody = document.getElementById('report-body');
+        const incomeSortBtn = document.getElementById('sort-income');
+        const expenseSortBtn = document.getElementById('sort-expense');
+        const resetFiltersBtn = document.getElementById('reset-filters');
+        const totalIncomeEl = document.getElementById('total-income');
+        const totalExpenseEl = document.getElementById('total-expense');
+        const balanceEl = document.getElementById('balance');
+
+        // Set default date
+        document.getElementById('date').valueAsDate = new Date();
+
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        // Populate categories based on transaction type
+        typeSelect.addEventListener('change', function() {
+            const type = this.value;
+            categorySelect.innerHTML = '<option value="">Pilih Kategori</option>';
+
+            if (type === 'income') {
+                categories.income.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    categorySelect.appendChild(option);
+                });
+                document.getElementById('submit-income').style.display = 'flex';
+                document.getElementById('submit-expense').style.display = 'none';
+            } else if (type === 'expense') {
+                categories.expense.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    categorySelect.appendChild(option);
+                });
+                document.getElementById('submit-income').style.display = 'none';
+                document.getElementById('submit-expense').style.display = 'flex';
+            } else {
+                document.getElementById('submit-income').style.display = 'flex';
+                document.getElementById('submit-expense').style.display = 'flex';
+            }
+        });
+
+        // Populate report categories
+        function populateReportCategories() {
+            reportCategorySelect.innerHTML = '<option value="all">Semua Kategori</option>';
+
+            // Add all income categories
+            categories.income.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                reportCategorySelect.appendChild(option);
+            });
+
+            // Add all expense categories
+            categories.expense.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                reportCategorySelect.appendChild(option);
+            });
+        }
+
+        // Calculate statistics
+        function calculateStats() {
+            const income = transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            const expense = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            const balance = income - expense;
+
+            totalIncomeEl.textContent = formatCurrency(income);
+            totalExpenseEl.textContent = formatCurrency(expense);
+            balanceEl.textContent = formatCurrency(balance);
+        }
+
+        // Render report
+        function renderReport(filteredTransactions = transactions) {
+            reportBody.innerHTML = '';
+
+            if (filteredTransactions.length === 0) {
+                reportBody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 italic">Tidak ada data yang sesuai dengan filter</td></tr>';
+                return;
+            }
+
+            filteredTransactions.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.className = transaction.type === 'income' ? 'bg-green-50' : 'bg-red-50';
+
+                row.innerHTML = `
+                    <td class="px-4 py-2 whitespace-nowrap">${formatDate(transaction.date)}</td>
+                    <td class="px-4 py-2 whitespace-nowrap">${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
+                    <td class="px-4 py-2 whitespace-nowrap">${transaction.category}</td>
+                    <td class="px-4 py-2 whitespace-nowrap font-medium ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                        ${formatCurrency(transaction.amount)}
+                    </td>
+                    <td class="px-4 py-2">${transaction.description || '-'}</td>
+                    <td class="px-4 py-2 whitespace-nowrap print-hidden">
+                        <button class="delete-btn text-red-500 hover:text-red-700 transition" data-id="${transaction.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+
+                reportBody.appendChild(row);
+            });
+
+            // Add event listeners for delete buttons
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    deleteTransaction(id);
+                });
+            });
+        }
+
+        // Filter transactions
+        function filterTransactions() {
+            const type = reportTypeSelect.value;
+            const category = reportCategorySelect.value;
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            let filtered = transactions;
+
+            // Filter by type
+            if (type !== 'all') {
+                filtered = filtered.filter(t => t.type === type);
+            }
+
+            // Filter by category
+            if (category !== 'all') {
+                filtered = filtered.filter(t => t.category === category);
+            }
+
+            // Filter by date
+            if (startDate) {
+                filtered = filtered.filter(t => t.date >= startDate);
+            }
+
+            if (endDate) {
+                filtered = filtered.filter(t => t.date <= endDate);
+            }
+
+            renderReport(filtered);
+        }
+
+        // Sort by largest income
+        function sortByIncome() {
+            const filtered = [...transactions]
+                .filter(t => t.type === 'income')
+                .sort((a, b) => b.amount - a.amount);
+
+            renderReport(filtered);
+        }
+
+        // Sort by largest expense
+        function sortByExpense() {
+            const filtered = [...transactions]
+                .filter(t => t.type === 'expense')
+                .sort((a, b) => b.amount - a.amount);
+
+            renderReport(filtered);
+        }
+
+        // Add transaction
+        function addTransaction(type) {
+            const category = categorySelect.value;
+            const amount = parseInt(document.getElementById('amount').value);
+            const description = document.getElementById('description').value;
+            const date = document.getElementById('date').value;
+
+            if (!category || !amount || !date) {
+                alert('Harap isi semua field yang wajib diisi!');
+                return;
+            }
+
+            const newTransaction = {
+                type: type,
+                category: category,
+                amount: amount,
+                description: description,
+                date: date
+            };
+
+            // Save to Firebase with auto-generated ID
+            const newTransactionRef = database.ref('transactions').push();
+            newTransactionRef.set(newTransaction);
+
+            // Reset form
+            transactionForm.reset();
+            document.getElementById('date').valueAsDate = new Date();
+            categorySelect.innerHTML = '<option value="">Pilih Kategori</option>';
+            document.getElementById('submit-income').style.display = 'flex';
+            document.getElementById('submit-expense').style.display = 'flex';
+
+            alert(`Transaksi ${type === 'income' ? 'pemasukan' : 'pengeluaran'} berhasil ditambahkan!`);
+        }
+
+        // Delete transaction
+        function deleteTransaction(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+                database.ref('transactions/' + id).remove();
+            }
+        }
+
+        // Update expense chart
+        function updateExpenseChart() {
+            const expenseData = {};
+
+            // Group expenses by category
+            transactions
+                .filter(t => t.type === 'expense')
+                .forEach(t => {
+                    if (!expenseData[t.category]) {
+                        expenseData[t.category] = 0;
+                    }
+                    expenseData[t.category] += t.amount;
+                });
+
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+
+            // Destroy previous chart if exists
+            if (expenseChart) {
+                expenseChart.destroy();
+            }
+
+            expenseChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(expenseData),
+                    datasets: [{
+                        data: Object.values(expenseData),
+                        backgroundColor: [
+                            '#8bc34a',
+                            '#689f38',
+                            '#4caf50',
+                            '#2e7d32',
+                            '#cddc39',
+                            '#afb42b'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Print report
+        function printReport() {
+            window.print();
+        }
+
+        // Load transactions from Firebase
+        function loadTransactions() {
+            database.ref('transactions').on('value', (snapshot) => {
+                transactions = [];
+                snapshot.forEach((childSnapshot) => {
+                    transactions.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                
+                // Sort by date (newest first)
+                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                calculateStats();
+                filterTransactions();
+                updateExpenseChart();
+            });
+        }
+
+        // Event listeners for submit buttons
+        document.getElementById('submit-income').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeSelect.value !== 'income') {
+                alert('Pilih jenis transaksi "Pemasukan" terlebih dahulu!');
+                return;
+            }
+            addTransaction('income');
+        });
+
+        document.getElementById('submit-expense').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeSelect.value !== 'expense') {
+                alert('Pilih jenis transaksi "Pengeluaran" terlebih dahulu!');
+                return;
+            }
+            addTransaction('expense');
+        });
+
+        // Event listeners for filters
+        reportTypeSelect.addEventListener('change', filterTransactions);
+        reportCategorySelect.addEventListener('change', filterTransactions);
+        startDateInput.addEventListener('change', filterTransactions);
+        endDateInput.addEventListener('change', filterTransactions);
+
+        // Event listeners for sort buttons
+        incomeSortBtn.addEventListener('click', sortByIncome);
+        expenseSortBtn.addEventListener('click', sortByExpense);
+
+        // Event listener for reset filters
+        resetFiltersBtn.addEventListener('click', function() {
+            reportTypeSelect.value = 'all';
+            reportCategorySelect.value = 'all';
+            startDateInput.value = '';
+            endDateInput.value = '';
+            filterTransactions();
+        });
+
+        // Event listener for print button
+        document.getElementById('print-report').addEventListener('click', printReport);
+
+        // Initialize
+        populateReportCategories();
+        loadTransactions();
+    </script>
+</body>
+</html>
