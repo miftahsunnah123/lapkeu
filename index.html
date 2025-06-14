@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
     <style>
         .gradient-bg {
             background: linear-gradient(135deg, #4f46e5 0%, #10b981 100%);
@@ -258,6 +261,22 @@
     </div>
 
     <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyALI0mFJo4yrjaedMqfJOB4ddTJYuBvRHE",
+            authDomain: "lapkeu-145e1.firebaseapp.com",
+            databaseURL: "https://lapkeu-145e1-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "lapkeu-145e1",
+            storageBucket: "lapkeu-145e1.firebasestorage.app",
+            messagingSenderId: "39079051298",
+            appId: "1:39079051298:web:f58f9d9dea19e190da8a7b",
+            measurementId: "G-JMKDRMKW33"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
         // Set current date
         const now = new Date();
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -349,10 +368,95 @@
             // Form submission
             document.getElementById('transaction-form').addEventListener('submit', function(e) {
                 e.preventDefault();
-                alert('Transaksi berhasil disimpan!');
-                // Here you would typically send data to server
+                
+                const form = e.target;
+                const transaction = {
+                    date: form.querySelector('input[type="date"]').value,
+                    type: form.querySelector('select:nth-of-type(1)').value,
+                    category: form.querySelector('select:nth-of-type(2)').value,
+                    amount: parseInt(form.querySelector('input[type="number"]').value),
+                    description: form.querySelector('textarea').value,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                };
+                
+                // Save to Firebase
+                database.ref('transactions').push(transaction)
+                    .then(() => {
+                        alert('Transaksi berhasil disimpan!');
+                        form.reset();
+                        // Refresh transaction list
+                        loadTransactions();
+                    })
+                    .catch(error => {
+                        console.error("Error saving transaction: ", error);
+                        alert('Gagal menyimpan transaksi');
+                    });
             });
+            // Load transactions from Firebase
+            function loadTransactions() {
+                database.ref('transactions').once('value')
+                    .then(snapshot => {
+                        const transactions = snapshot.val();
+                        const tbody = document.querySelector('.transaction-table tbody');
+                        tbody.innerHTML = '';
+                        
+                        if (transactions) {
+                            Object.entries(transactions).forEach(([key, value]) => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td class="px-4 py-3">${new Date(value.date).toLocaleDateString('id-ID')}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 ${value.type === 'Pemasukan' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} rounded-full text-xs">
+                                            ${value.type}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">${value.category}</td>
+                                    <td class="px-4 py-3 font-medium ${value.type === 'Pemasukan' ? 'text-green-600' : 'text-red-600'}">
+                                        Rp ${value.amount.toLocaleString('id-ID')}
+                                    </td>
+                                    <td class="px-4 py-3">${value.description || '-'}</td>
+                                    <td class="px-4 py-3">
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2" onclick="editTransaction('${key}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-500 hover:text-red-700" onclick="deleteTransaction('${key}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error loading transactions: ", error);
+                    });
+            }
+
+            // Load transactions when page loads
+            loadTransactions();
         });
+
+        // Delete transaction function
+        function deleteTransaction(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+                database.ref('transactions/' + id).remove()
+                    .then(() => {
+                        alert('Transaksi berhasil dihapus');
+                        loadTransactions();
+                    })
+                    .catch(error => {
+                        console.error("Error deleting transaction: ", error);
+                        alert('Gagal menghapus transaksi');
+                    });
+            }
+        }
+
+        // Edit transaction function (you'll need to implement this)
+        function editTransaction(id) {
+            alert('Edit functionality to be implemented');
+            // You'll need to fetch the transaction and populate the form
+        }
     </script>
 </body>
 </html>
