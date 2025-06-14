@@ -42,6 +42,14 @@
                     <div class="text-right">
                         <p class="text-sm">Jl. Gedung Batu Tengah V Semarang Barat</p>
                         <p class="text-sm opacity-80" id="current-date">Sabtu, 14 Juni 2025</p>
+                        <div class="flex space-x-2 mt-2 justify-end">
+                            <button onclick="window.print()" class="bg-white text-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-50 transition">
+                                <i class="fas fa-print mr-1"></i> Print
+                            </button>
+                            <button id="export-excel" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition">
+                                <i class="fas fa-file-excel mr-1"></i> Excel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -292,6 +300,50 @@
                         }
                     }
                 }
+            });
+
+            // Excel export functionality
+            document.getElementById('export-excel').addEventListener('click', function() {
+                // Create HTML table data
+                let tableHTML = `
+                    <table border="1">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Jenis</th>
+                                <th>Kategori</th>
+                                <th>Jumlah</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>14 Jun 2025</td>
+                                <td>Pengeluaran</td>
+                                <td>Gaji Pengurus</td>
+                                <td>Rp 4.000.000</td>
+                                <td>Bisyarah</td>
+                            </tr>
+                            <tr>
+                                <td>14 Jun 2025</td>
+                                <td>Pengeluaran</td>
+                                <td>Konsumsi Rapat</td>
+                                <td>Rp 249.500</td>
+                                <td>Rapat yayasan</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                
+                // Create download link
+                const blob = new Blob([tableHTML], {type: 'application/vnd.ms-excel'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'laporan-keuangan.xls';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             });
 
             // Form submission
