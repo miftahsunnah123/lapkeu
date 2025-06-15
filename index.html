@@ -12,7 +12,38 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
     <style>
         .gradient-bg {
-            background: linear-gradient(135deg, #4f46e5 0%, #10b981 100%);
+            background: linear-gradient(135deg, #16a34a 0%, #facc15 100%);
+        }
+        body {
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://miftahussunnahsmg.org/wp-content/uploads/2023/07/IMG_6044.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            filter: blur(1px);
+            z-index: -1;
+        }
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: -1;
+        }
+        .bg-white {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
         }
         .card-hover:hover {
             transform: translateY(-5px);
@@ -111,20 +142,16 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-gray-700 mb-2">Jenis Transaksi</label>
-                                    <select class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option>Pilih Jenis</option>
-                                        <option>Pemasukan</option>
-                                        <option selected>Pengeluaran</option>
+                                    <select id="transaction-type" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateCategories()">
+                                        <option value="">Pilih Jenis</option>
+                                        <option value="Pemasukan">Pemasukan</option>
+                                        <option value="Pengeluaran">Pengeluaran</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 mb-2">Kategori</label>
-                                    <select class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option>Pilih Kategori</option>
-                                        <option selected>Gaji Pengurus</option>
-                                        <option>Konsumsi Rapat</option>
-                                        <option>Operasional</option>
-                                        <option>Lain-lain</option>
+                                    <select id="transaction-category" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" disabled>
+                                        <option value="">Pilih Kategori</option>
                                     </select>
                                 </div>
                                 <div>
@@ -261,6 +288,35 @@
     </div>
 
     <script>
+        // Dynamic category selection
+        function updateCategories() {
+            const typeSelect = document.getElementById('transaction-type');
+            const categorySelect = document.getElementById('transaction-category');
+            const selectedType = typeSelect.value;
+            
+            categorySelect.innerHTML = '<option value="">Pilih Kategori</option>';
+            
+            if (selectedType === 'Pemasukan') {
+                const incomeCategories = ['SPP SDAQ', 'SPP RAQ', 'SPP RABW', 'Lain-lain'];
+                incomeCategories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    categorySelect.appendChild(option);
+                });
+            } else if (selectedType === 'Pengeluaran') {
+                const expenseCategories = ['Gaji Pengurus', 'Konsumsi Rapat', 'Wakaf', 'Iuran', 'Lain-lain'];
+                expenseCategories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    categorySelect.appendChild(option);
+                });
+            }
+            
+            categorySelect.disabled = !selectedType;
+        }
+
         // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyALI0mFJo4yrjaedMqfJOB4ddTJYuBvRHE",
@@ -372,15 +428,19 @@
                 const form = e.target;
                 const transaction = {
                     date: form.querySelector('input[type="date"]').value,
-                    type: form.querySelector('select:nth-of-type(1)').value,
-                    category: form.querySelector('select:nth-of-type(2)').value,
+                    type: form.querySelector('#transaction-type').value,
+                    category: form.querySelector('#transaction-category').value,
                     amount: parseInt(form.querySelector('input[type="number"]').value),
                     description: form.querySelector('textarea').value,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 };
                 
-                // Save to Firebase
-                database.ref('transactions').push(transaction)
+                // Check if we're editing or creating new
+                const editId = form.querySelector('input[name="editId"]')?.value;
+                
+                if (editId) {
+                    // Update existing transaction
+                    database.ref('transactions/' + editId).update(transaction)
                     .then(() => {
                         alert('Transaksi berhasil disimpan!');
                         form.reset();
@@ -391,6 +451,7 @@
                         console.error("Error saving transaction: ", error);
                         alert('Gagal menyimpan transaksi');
                     });
+                }
             });
             // Load transactions from Firebase
             function loadTransactions() {
@@ -452,10 +513,40 @@
             }
         }
 
-        // Edit transaction function (you'll need to implement this)
+        // Edit transaction function
         function editTransaction(id) {
-            alert('Edit functionality to be implemented');
-            // You'll need to fetch the transaction and populate the form
+            database.ref('transactions/' + id).once('value')
+                .then(snapshot => {
+                    const transaction = snapshot.val();
+                    const form = document.getElementById('transaction-form');
+                    
+                    // Populate form
+                    form.querySelector('#transaction-type').value = transaction.type;
+                    updateCategories();
+                    setTimeout(() => {
+                        form.querySelector('#transaction-category').value = transaction.category;
+                    }, 100);
+                    form.querySelector('input[type="number"]').value = transaction.amount;
+                    form.querySelector('input[type="date"]').value = transaction.date;
+                    form.querySelector('textarea').value = transaction.description || '';
+                    
+                    // Add hidden field for edit mode
+                    let editField = form.querySelector('input[name="editId"]');
+                    if (!editField) {
+                        editField = document.createElement('input');
+                        editField.type = 'hidden';
+                        editField.name = 'editId';
+                        form.appendChild(editField);
+                    }
+                    editField.value = id;
+                    
+                    // Scroll to form
+                    form.scrollIntoView({ behavior: 'smooth' });
+                })
+                .catch(error => {
+                    console.error("Error loading transaction: ", error);
+                    alert('Gagal memuat data transaksi');
+                });
         }
     </script>
 </body>
