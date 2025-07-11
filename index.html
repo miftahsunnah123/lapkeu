@@ -52,6 +52,9 @@
         .transaction-table {
             min-width: 800px;
         }
+        #transaction-totals td {
+            border-top: 2px solid #e5e7eb;
+        }
         @media (max-width: 768px) {
             .stats-container {
                 flex-direction: column;
@@ -178,9 +181,24 @@
                     <!-- Transaction Table -->
                     <div class="bg-white rounded-xl shadow-md overflow-hidden">
                         <div class="p-6">
-                            <h2 class="text-xl font-bold mb-6 text-gray-800 flex items-center">
-                                <i class="fas fa-history mr-2 text-blue-500"></i> Riwayat Transaksi
-                            </h2>
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                                <h2 class="text-xl font-bold text-gray-800 flex items-center mb-4 md:mb-0">
+                                    <i class="fas fa-history mr-2 text-blue-500"></i> Riwayat Transaksi
+                                </h2>
+                                <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                                    <select id="filter-type" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Semua Jenis</option>
+                                        <option value="Pemasukan">Pemasukan</option>
+                                        <option value="Pengeluaran">Pengeluaran</option>
+                                    </select>
+                                    <select id="filter-category" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Semua Kategori</option>
+                                    </select>
+                                    <button id="reset-filter" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                                        Reset Filter
+                                    </button>
+                                </div>
+                            </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full transaction-table">
                                     <thead class="bg-gray-100">
@@ -229,6 +247,14 @@
                                             </td>
                                         </tr>
                                     </tbody>
+                                    <tfoot id="transaction-totals" class="bg-gray-50 font-bold">
+                                        <tr>
+                                            <td colspan="3" class="px-4 py-3 text-right">Total:</td>
+                                            <td class="px-4 py-3 text-green-600" id="total-income">Rp 0</td>
+                                            <td class="px-4 py-3 text-red-600" id="total-expense">Rp 0</td>
+                                            <td class="px-4 py-3 text-blue-600" id="total-balance">Rp 0</td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>
@@ -237,31 +263,6 @@
 
                 <!-- Right Column -->
                 <div class="space-y-8">
-                    <!-- Expense Chart -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h2 class="text-xl font-bold mb-6 text-gray-800 flex items-center">
-                            <i class="fas fa-chart-pie mr-2 text-blue-500"></i> Diagram Pengeluaran per Kategori
-                        </h2>
-                        <div class="h-64">
-                            <canvas id="expenseChart"></canvas>
-                        </div>
-                        <div class="mt-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Dari Tanggal</label>
-                                    <input type="date" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Sampai Tanggal</label>
-                                    <input type="date" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                            </div>
-                            <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-300 w-full">
-                                Filter Data
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- Quick Stats -->
                     <div class="bg-white rounded-xl shadow-md p-6">
                         <h2 class="text-xl font-bold mb-6 text-gray-800 flex items-center">
@@ -270,15 +271,19 @@
                         <div class="space-y-4">
                             <div>
                                 <p class="text-gray-600">Pengeluaran Tertinggi</p>
-                                <p class="font-bold text-lg">Gaji Pengurus - Rp 4.000.000</p>
+                                <p class="font-bold text-lg" id="highest-expense">-</p>
                             </div>
                             <div>
                                 <p class="text-gray-600">Pengeluaran Terkecil</p>
-                                <p class="font-bold text-lg">Konsumsi Rapat - Rp 249.500</p>
+                                <p class="font-bold text-lg" id="lowest-expense">-</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Pemasukan Tertinggi</p>
+                                <p class="font-bold text-lg" id="highest-income">-</p>
                             </div>
                             <div>
                                 <p class="text-gray-600">Jumlah Transaksi</p>
-                                <p class="font-bold text-lg">2 Transaksi</p>
+                                <p class="font-bold text-lg" id="transaction-count">0 Transaksi</p>
                             </div>
                         </div>
                     </div>
@@ -297,7 +302,7 @@
             categorySelect.innerHTML = '<option value="">Pilih Kategori</option>';
             
             if (selectedType === 'Pemasukan') {
-                const incomeCategories = ['SPP SDAQ', 'SPP RAQ', 'SPP RABW', 'Lain-lain'];
+                const incomeCategories = ['SPP SDAQ', 'SPI SDAQ', 'SPP RAQ', 'SPI RAQ', 'SPP RABW', 'SPI RABW', 'Lain-lain'];
                 incomeCategories.forEach(cat => {
                     const option = document.createElement('option');
                     option.value = cat;
@@ -338,45 +343,7 @@
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', options);
 
-        // Initialize chart
         document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('expenseChart').getContext('2d');
-            const expenseChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Gaji Pengurus', 'Konsumsi Rapat'],
-                    datasets: [{
-                        data: [4000000, 249500],
-                        backgroundColor: [
-                            '#3b82f6',
-                            '#10b981'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += 'Rp ' + context.raw.toLocaleString('id-ID');
-                                    return label;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
             // Excel export functionality
             document.getElementById('export-excel').addEventListener('click', function() {
                 // Create HTML table data
@@ -426,11 +393,29 @@
                 e.preventDefault();
                 
                 const form = e.target;
+                const amount = parseInt(form.querySelector('input[type="number"]').value);
+                
+                // Validate form
+                if (!form.querySelector('#transaction-type').value) {
+                    alert('Pilih jenis transaksi terlebih dahulu');
+                    return;
+                }
+                
+                if (!form.querySelector('#transaction-category').value) {
+                    alert('Pilih kategori transaksi terlebih dahulu');
+                    return;
+                }
+                
+                if (isNaN(amount) || amount <= 0) {
+                    alert('Masukkan jumlah transaksi yang valid');
+                    return;
+                }
+                
                 const transaction = {
                     date: form.querySelector('input[type="date"]').value,
                     type: form.querySelector('#transaction-type').value,
                     category: form.querySelector('#transaction-category').value,
-                    amount: parseInt(form.querySelector('input[type="number"]').value),
+                    amount: amount,
                     description: form.querySelector('textarea').value,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 };
@@ -442,9 +427,25 @@
                     // Update existing transaction
                     database.ref('transactions/' + editId).update(transaction)
                     .then(() => {
+                        alert('Transaksi berhasil diperbarui!');
+                        form.reset();
+                        form.querySelector('#transaction-category').disabled = true;
+                        if (form.querySelector('input[name="editId"]')) {
+                            form.removeChild(form.querySelector('input[name="editId"]'));
+                        }
+                        loadTransactions();
+                    })
+                    .catch(error => {
+                        console.error("Error updating transaction: ", error);
+                        alert('Gagal memperbarui transaksi');
+                    });
+                } else {
+                    // Create new transaction
+                    database.ref('transactions').push(transaction)
+                    .then(() => {
                         alert('Transaksi berhasil disimpan!');
                         form.reset();
-                        // Refresh transaction list
+                        form.querySelector('#transaction-category').disabled = true;
                         loadTransactions();
                     })
                     .catch(error => {
@@ -461,8 +462,19 @@
                         const tbody = document.querySelector('.transaction-table tbody');
                         tbody.innerHTML = '';
                         
+                        let totalIncome = 0;
+                        let totalExpense = 0;
+                        
                         if (transactions) {
-                            Object.entries(transactions).forEach(([key, value]) => {
+                            const filteredTransactions = filterTransactions(transactions);
+                            filteredTransactions.forEach(([key, value]) => {
+                                // Calculate totals
+                                if (value.type === 'Pemasukan') {
+                                    totalIncome += value.amount;
+                                } else if (value.type === 'Pengeluaran') {
+                                    totalExpense += value.amount;
+                                }
+                                
                                 const row = document.createElement('tr');
                                 row.innerHTML = `
                                     <td class="px-4 py-3">${new Date(value.date).toLocaleDateString('id-ID')}</td>
@@ -488,12 +500,160 @@
                                 tbody.appendChild(row);
                             });
                         }
+                        
+                        // Calculate quick stats
+                        let highestExpense = { amount: 0, category: '' };
+                        let lowestExpense = { amount: Infinity, category: '' };
+                        let highestIncome = { amount: 0, category: '' };
+                        let transactionCount = 0;
+
+                        if (transactions) {
+                            const filteredTransactions = filterTransactions(transactions);
+                            transactionCount = filteredTransactions.length;
+                            
+                            filteredTransactions.forEach(([key, transaction]) => {
+                                if (transaction.type === 'Pengeluaran') {
+                                    if (transaction.amount > highestExpense.amount) {
+                                        highestExpense = {
+                                            amount: transaction.amount,
+                                            category: transaction.category
+                                        };
+                                    }
+                                    if (transaction.amount < lowestExpense.amount) {
+                                        lowestExpense = {
+                                            amount: transaction.amount,
+                                            category: transaction.category
+                                        };
+                                    }
+                                } else if (transaction.type === 'Pemasukan') {
+                                    if (transaction.amount > highestIncome.amount) {
+                                        highestIncome = {
+                                            amount: transaction.amount,
+                                            category: transaction.category
+                                        };
+                                    }
+                                }
+                            });
+                        }
+
+                        // Update quick stats
+                        document.getElementById('highest-expense').textContent = 
+                            highestExpense.amount > 0 ? 
+                            `${highestExpense.category} - Rp ${highestExpense.amount.toLocaleString('id-ID')}` : '-';
+                        
+                        document.getElementById('lowest-expense').textContent = 
+                            lowestExpense.amount < Infinity ? 
+                            `${lowestExpense.category} - Rp ${lowestExpense.amount.toLocaleString('id-ID')}` : '-';
+                        
+                        document.getElementById('highest-income').textContent = 
+                            highestIncome.amount > 0 ? 
+                            `${highestIncome.category} - Rp ${highestIncome.amount.toLocaleString('id-ID')}` : '-';
+                        
+                        document.getElementById('transaction-count').textContent = 
+                            `${transactionCount} Transaksi`;
+
+                        // Update filtered totals
+                        document.getElementById('total-income').textContent = 
+                            `Rp ${totalIncome.toLocaleString('id-ID')}`;
+                        document.getElementById('total-expense').textContent = 
+                            `Rp ${totalExpense.toLocaleString('id-ID')}`;
+                        document.getElementById('total-balance').textContent = 
+                            `Rp ${(totalIncome - totalExpense).toLocaleString('id-ID')}`;
+
+                        // Update summary cards
+                        document.querySelector('.stats-container div:nth-child(1) h2').textContent = 
+                            `Rp ${totalIncome.toLocaleString('id-ID')}`;
+                        document.querySelector('.stats-container div:nth-child(2) h2').textContent = 
+                            `Rp ${totalExpense.toLocaleString('id-ID')}`;
+                        document.querySelector('.stats-container div:nth-child(3) h2').textContent = 
+                            `Rp ${(totalIncome - totalExpense).toLocaleString('id-ID')}`;
+                            
                     })
                     .catch(error => {
                         console.error("Error loading transactions: ", error);
                     });
             }
 
+            // Initialize filter categories
+            function initFilterCategories() {
+                const filterCategory = document.getElementById('filter-category');
+                const incomeCategories = ['SPP SDAQ', 'SPI SDAQ', 'SPP RAQ', 'SPI RAQ', 'SPP RABW', 'SPI RABW', 'Lain-lain'];
+                const expenseCategories = ['Gaji Pengurus', 'Konsumsi Rapat', 'Wakaf', 'Iuran', 'Lain-lain'];
+                
+                // Clear existing options except first
+                while (filterCategory.options.length > 1) {
+                    filterCategory.remove(1);
+                }
+                
+                // Add all categories
+                incomeCategories.concat(expenseCategories).forEach(cat => {
+                    if (!filterCategory.querySelector(`option[value="${cat}"]`)) {
+                        const option = document.createElement('option');
+                        option.value = cat;
+                        option.textContent = cat;
+                        filterCategory.appendChild(option);
+                    }
+                });
+            }
+
+            // Filter transactions
+            function filterTransactions(transactions) {
+                const filterType = document.getElementById('filter-type').value;
+                const filterCategory = document.getElementById('filter-category').value;
+                
+                return Object.entries(transactions).filter(([key, value]) => {
+                    const typeMatch = !filterType || value.type === filterType;
+                    const categoryMatch = !filterCategory || value.category === filterCategory;
+                    return typeMatch && categoryMatch;
+                });
+            }
+
+            // Update filter categories when type changes
+            document.getElementById('filter-type').addEventListener('change', function() {
+                const type = this.value;
+                const filterCategory = document.getElementById('filter-category');
+                
+                // Clear existing options except first
+                while (filterCategory.options.length > 1) {
+                    filterCategory.remove(1);
+                }
+                
+                if (type === 'Pemasukan') {
+                    const incomeCategories = ['SPP SDAQ', 'SPI SDAQ', 'SPP RAQ', 'SPI RAQ', 'SPP RABW', 'SPI RABW', 'Lain-lain'];
+                    incomeCategories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat;
+                        option.textContent = cat;
+                        filterCategory.appendChild(option);
+                    });
+                } else if (type === 'Pengeluaran') {
+                    const expenseCategories = ['Gaji Pengurus', 'Konsumsi Rapat', 'Wakaf', 'Iuran', 'Lain-lain'];
+                    expenseCategories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat;
+                        option.textContent = cat;
+                        filterCategory.appendChild(option);
+                    });
+                } else {
+                    initFilterCategories();
+                }
+            });
+
+            // Reset filter
+            document.getElementById('reset-filter').addEventListener('click', function() {
+                document.getElementById('filter-type').value = '';
+                document.getElementById('filter-category').value = '';
+                initFilterCategories();
+                loadTransactions();
+            });
+
+            // Apply filter when either dropdown changes
+            document.getElementById('filter-type').addEventListener('change', loadTransactions);
+            document.getElementById('filter-category').addEventListener('change', loadTransactions);
+
+            // Initialize filter categories
+            initFilterCategories();
+            
             // Load transactions when page loads
             loadTransactions();
         });
