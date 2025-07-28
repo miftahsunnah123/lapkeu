@@ -1,737 +1,964 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Keuangan - Yayasan Miftahus Sunnah</title>
+    
+    <!-- Favicon & Logo -->
+    <link rel="icon" href="https://lh3.googleusercontent.com/a/ACg8ocKSIlJ0_E91_xjllpIqVTAtx0cSsvrdX9MFQJcUf1Iumwz_u8c=s96-c-rg-br100">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js for diagrams -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    
+    <!-- SheetJS (XLSX) for Excel Export/Import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
+    <!-- Custom Styles -->
     <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #16a34a 0%, #facc15 100%);
-        }
         body {
-            position: relative;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
         }
+        /* Blurred background image */
         body::before {
-            content: "";
+            content: '';
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: url('https://miftahussunnahsmg.org/wp-content/uploads/2023/07/IMG_6044.jpg');
+            width: 100%;
+            height: 100%;
+            background-image: url('https://miftahussunnahsmg.org/wp-content/uploads/2025/07/IMG_2337-scaled.jpg');
             background-size: cover;
-            background-attachment: fixed;
             background-position: center;
-            filter: blur(1px);
+            filter: blur(8px);
+            -webkit-filter: blur(8px);
             z-index: -1;
         }
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 255, 255, 0.7);
-            z-index: -1;
+        /* Glassmorphism effect for cards */
+        .card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
-        .bg-white {
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
-        .card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
         }
-        .transaction-table {
-            min-width: 800px;
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
         }
-        #transaction-totals td {
-            border-top: 2px solid #e5e7eb;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
-        @media (max-width: 768px) {
-            .stats-container {
-                flex-direction: column;
-            }
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <div class="min-h-screen">
-        <!-- Header -->
-        <header class="gradient-bg text-white shadow-lg">
-            <div class="container mx-auto px-4 py-6">
-                <div class="flex flex-col md:flex-row items-center justify-between">
-                    <div class="flex items-center mb-4 md:mb-0">
-                        <img src="https://lh3.googleusercontent.com/a/ACg8ocKSIlJ0_E91_xjllpIqVTAtx0cSsvrdX9MFQJcUf1Iumwz_u8c=s288-c-no" 
-                             alt="Logo Yayasan" class="h-12 mr-4">
-                        <div>
-                            <h1 class="text-2xl font-bold">Laporan Keuangan</h1>
-                            <p class="text-sm opacity-80">Yayasan Miftahus Sunnah Semarang</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm">Jl. Gedung Batu Tengah V Semarang Barat</p>
-                        <p class="text-sm opacity-80" id="current-date">Sabtu, 14 Juni 2025</p>
-                        <div class="flex space-x-2 mt-2 justify-end">
-                            <button onclick="window.print()" class="bg-white text-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-50 transition">
-                                <i class="fas fa-print mr-1"></i> Print
-                            </button>
-                            <button id="export-excel" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition">
-                                <i class="fas fa-file-excel mr-1"></i> Excel
-                            </button>
-                        </div>
-                    </div>
+<body class="text-gray-800">
+
+    <!-- Auth Error Overlay -->
+    <div id="errorOverlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md mx-auto">
+            <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <h2 class="text-2xl font-bold text-red-600 mb-4">Kesalahan Konfigurasi Firebase</h2>
+            <p class="text-gray-700 mb-3">Aplikasi tidak dapat terhubung ke database karena metode "Sign-in Anonymous" belum diaktifkan di proyek Firebase Anda.</p>
+            <p class="text-gray-600 mb-6 font-medium"><strong>Langkah Perbaikan:</strong><br>Buka Firebase Console, masuk ke bagian <strong class="text-gray-800">Authentication</strong> → <strong class="text-gray-800">Sign-in method</strong>, dan aktifkan provider <strong class="text-gray-800">'Anonymous'</strong>.</p>
+            <p class="text-sm text-gray-500">Kode Error: <code id="errorCode" class="bg-gray-200 p-1 rounded font-mono"></code></p>
+        </div>
+    </div>
+    
+    <!-- Permission Error Overlay -->
+    <div id="permissionErrorOverlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-lg mx-auto">
+            <div class="text-center">
+                <svg class="w-16 h-16 text-yellow-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Izin Akses Ditolak</h2>
+                <p class="text-gray-700 mb-3">Aplikasi tidak memiliki izin untuk membaca atau menulis data. Ini disebabkan oleh <strong>Firestore Security Rules</strong> yang terlalu ketat.</p>
+                <p class="text-gray-600 mb-6 font-medium"><strong>Langkah Perbaikan:</strong><br>Buka Firebase Console, pilih proyek Anda, lalu ke <strong>Firestore Database</strong> → <strong>Rules</strong>, dan ganti aturannya dengan kode di bawah ini:</p>
+            </div>
+            <pre class="bg-gray-100 text-left text-sm p-4 rounded-lg overflow-x-auto text-gray-800"><code>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /laporan-keuangan/{year}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}</code></pre>
+        </div>
+    </div>
+
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm mx-auto fade-in">
+            <h3 id="confirmModalTitle" class="text-lg font-bold text-gray-900 mb-4">Konfirmasi Hapus</h3>
+            <p id="confirmModalText" class="text-gray-700 mb-6">Apakah Anda yakin ingin menghapus transaksi ini?</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirmModalCancel" class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium transition-colors">Batal</button>
+                <button id="confirmModalOk" class="px-6 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full mx-auto fade-in">
+            <h2 class="text-xl font-bold mb-6">Edit Transaksi</h2>
+            <form id="editTransactionForm" class="space-y-4">
+                <input type="hidden" id="editTransactionId">
+                <div>
+                    <label for="editTransactionType" class="block mb-2 text-sm font-medium text-gray-900">Jenis Transaksi</label>
+                    <select id="editTransactionType" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                        <option value="pemasukan">Pemasukan</option>
+                        <option value="pengeluaran">Pengeluaran</option>
+                    </select>
                 </div>
+                <div>
+                    <label for="editCategory" class="block mb-2 text-sm font-medium text-gray-900">Kategori</label>
+                    <select id="editCategory" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+                </div>
+                <div>
+                    <label for="editAmount" class="block mb-2 text-sm font-medium text-gray-900">Jumlah (Rp)</label>
+                    <input type="number" id="editAmount" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                </div>
+                <div>
+                    <label for="editDate" class="block mb-2 text-sm font-medium text-gray-900">Tanggal</label>
+                    <input type="date" id="editDate" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                </div>
+                <div>
+                    <label for="editDescription" class="block mb-2 text-sm font-medium text-gray-900">Keterangan (Opsional)</label>
+                    <textarea id="editDescription" rows="2" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></textarea>
+                </div>
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" id="editModalCancel" class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium transition-colors">Batal</button>
+                    <button type="submit" class="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row items-center justify-between mb-8 fade-in gap-4">
+            <div class="flex items-center gap-4">
+                <img src="https://lh3.googleusercontent.com/a/ACg8ocKSIlJ0_E91_xjllpIqVTAtx0cSsvrdX9MFQJcUf1Iumwz_u8c=s96-c-rg-br100" alt="Logo Yayasan" class="h-12 w-12 rounded-full shadow-md">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Laporan Keuangan</h1>
+                    <p class="text-gray-600">Yayasan Miftahus Sunnah</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border">
+                 <label for="fiscalYear" class="text-sm font-medium text-gray-700">Tahun Anggaran:</label>
+                 <select id="fiscalYear" class="bg-gray-50 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                     <!-- Options will be populated by JS -->
+                 </select>
+                 <button id="loadReportBtn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Tampilkan</button>
+                 <button id="importBtn" class="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors">Import Excel</button>
+                 <button id="exportBtn" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">Export Excel</button>
+                 <input type="file" id="importFile" class="hidden" accept=".xlsx, .xls">
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="container mx-auto px-4 py-8">
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 stats-container">
-                <div class="bg-white rounded-xl shadow-md p-6 transition-all duration-300 card-hover">
-                    <div class="flex items-center justify-between">
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Left Column: Input Form & Summary -->
+            <div class="lg:col-span-1 flex flex-col gap-8">
+                <!-- Input Form -->
+                <div id="form-card" class="card p-6 rounded-2xl shadow-lg fade-in" style="animation-delay: 0.1s;">
+                    <h2 class="text-xl font-bold mb-4">Tambah Transaksi Baru</h2>
+                    <form id="transactionForm" class="space-y-4">
                         <div>
-                            <p class="text-gray-500 font-medium">Total Pemasukan</p>
-                            <h2 class="text-3xl font-bold text-green-600 mt-2">Rp 0</h2>
+                            <label for="transactionType" class="block mb-2 text-sm font-medium text-gray-900">Jenis Transaksi</label>
+                            <select id="transactionType" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                <option value="pemasukan">Pemasukan</option>
+                                <option value="pengeluaran">Pengeluaran</option>
+                            </select>
                         </div>
-                        <div class="bg-green-100 p-3 rounded-full">
-                            <i class="fas fa-arrow-down text-green-600 text-xl"></i>
+                        <div>
+                            <label for="category" class="block mb-2 text-sm font-medium text-gray-900">Kategori</label>
+                            <select id="category" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                <!-- Options will be populated by JS based on transactionType -->
+                            </select>
                         </div>
-                    </div>
+                        <div>
+                            <label for="amount" class="block mb-2 text-sm font-medium text-gray-900">Jumlah (Rp)</label>
+                            <input type="number" id="amount" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Contoh: 500000" required>
+                        </div>
+                        <div>
+                            <label for="date" class="block mb-2 text-sm font-medium text-gray-900">Tanggal</label>
+                            <input type="date" id="date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                        </div>
+                        <div>
+                            <label for="description" class="block mb-2 text-sm font-medium text-gray-900">Keterangan (Opsional)</label>
+                            <textarea id="description" rows="2" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Detail transaksi..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-all duration-300">Simpan Transaksi</button>
+                    </form>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-md p-6 transition-all duration-300 card-hover">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total Pengeluaran</p>
-                            <h2 class="text-3xl font-bold text-red-600 mt-2">Rp 4.249.500</h2>
+                <!-- Summary -->
+                <div id="summary-card" class="card p-6 rounded-2xl shadow-lg fade-in" style="animation-delay: 0.2s;">
+                    <h2 class="text-xl font-bold mb-4">Ringkasan Keuangan</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-gray-100 rounded-lg">
+                            <span class="font-medium">Saldo Tahun Lalu</span>
+                            <span id="prevYearBalance" class="font-bold text-gray-600">Rp 0</span>
                         </div>
-                        <div class="bg-red-100 p-3 rounded-full">
-                            <i class="fas fa-arrow-up text-red-600 text-xl"></i>
+                        <div class="flex justify-between items-center p-3 bg-green-100 rounded-lg">
+                            <span class="font-medium text-green-800">Total Pemasukan</span>
+                            <span id="totalIncome" class="font-bold text-green-800">Rp 0</span>
                         </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md p-6 transition-all duration-300 card-hover">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 font-medium">Saldo</p>
-                            <h2 class="text-3xl font-bold text-blue-600 mt-2">-Rp 4.249.500</h2>
+                        <div class="flex justify-between items-center p-3 bg-red-100 rounded-lg">
+                            <span class="font-medium text-red-800">Total Pengeluaran</span>
+                            <span id="totalExpense" class="font-bold text-red-800">Rp 0</span>
                         </div>
-                        <div class="bg-blue-100 p-3 rounded-full">
-                            <i class="fas fa-wallet text-blue-600 text-xl"></i>
+                        <div class="flex justify-between items-center p-4 bg-blue-100 rounded-lg mt-2">
+                            <span class="font-bold text-blue-800 text-lg">SALDO SEKARANG</span>
+                            <span id="currentBalance" class="font-bold text-blue-800 text-lg">Rp 0</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Left Column -->
-                <div class="lg:col-span-2 space-y-8">
-                    <!-- Transaction Form -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h2 class="text-xl font-bold mb-6 text-gray-800 flex items-center">
-                            <i class="fas fa-plus-circle mr-2 text-blue-500"></i> Input Transaksi Baru
-                        </h2>
-                        <form id="transaction-form">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Jenis Transaksi</label>
-                                    <select id="transaction-type" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateCategories()">
-                                        <option value="">Pilih Jenis</option>
-                                        <option value="Pemasukan">Pemasukan</option>
-                                        <option value="Pengeluaran">Pengeluaran</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Kategori</label>
-                                    <select id="transaction-category" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" disabled>
-                                        <option value="">Pilih Kategori</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Jumlah (Rp)</label>
-                                    <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Tanggal</label>
-                                    <input type="date" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="2025-06-14">
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <label class="block text-gray-700 mb-2">Keterangan</label>
-                                <textarea class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2" placeholder="Tambahkan keterangan"></textarea>
-                            </div>
-                            <div class="mt-6">
-                                <button type="submit" class="gradient-bg text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all duration-300 flex items-center">
-                                    <i class="fas fa-save mr-2"></i> Simpan Transaksi
-                                </button>
-                            </div>
-                        </form>
+            <!-- Right Column: History & Chart -->
+            <div class="lg:col-span-2 flex flex-col gap-8">
+                <!-- History Card -->
+                <div class="card p-6 rounded-2xl shadow-lg flex flex-col fade-in" style="animation-delay: 0.3s;">
+                    <h2 class="text-xl font-bold mb-4 flex-shrink-0">Riwayat Transaksi</h2>
+                    
+                    <!-- Filters -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 flex-shrink-0">
+                        <input type="text" id="searchInput" placeholder="Cari kategori/keterangan..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                        <select id="filterType" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                            <option value="all">Semua Jenis</option>
+                            <option value="pemasukan">Pemasukan</option>
+                            <option value="pengeluaran">Pengeluaran</option>
+                        </select>
+                        <input type="date" id="filterStartDate" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                        <input type="date" id="filterEndDate" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     </div>
-
-                    <!-- Transaction Table -->
-                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                        <div class="p-6">
-                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                                <h2 class="text-xl font-bold text-gray-800 flex items-center mb-4 md:mb-0">
-                                    <i class="fas fa-history mr-2 text-blue-500"></i> Riwayat Transaksi
-                                </h2>
-                                <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                                    <select id="filter-type" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Semua Jenis</option>
-                                        <option value="Pemasukan">Pemasukan</option>
-                                        <option value="Pengeluaran">Pengeluaran</option>
-                                    </select>
-                                    <select id="filter-category" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Semua Kategori</option>
-                                    </select>
-                                    <select id="sort-date" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="newest">Terbaru</option>
-                                        <option value="oldest">Terlama</option>
-                                    </select>
-                                    <input type="text" id="search-keyword" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Cari transaksi...">
-                                    <button id="reset-filter" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                                        Reset Filter
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
-                                <table class="w-full transaction-table">
-                                    <thead class="bg-gray-100 sticky top-0 z-10">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Tanggal</th>
-                                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Jenis</th>
-                                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Kategori</th>
-                                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Jumlah</th>
-                                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Keterangan</th>
-                                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200">
-                                        <tr>
-                                            <td class="px-4 py-3">14 Jun 2025</td>
-                                            <td class="px-4 py-3">
-                                                <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Pengeluaran</span>
-                                            </td>
-                                            <td class="px-4 py-3">Gaji Pengurus</td>
-                                            <td class="px-4 py-3 font-medium text-red-600">Rp 4.000.000</td>
-                                            <td class="px-4 py-3">Bisyarah</td>
-                                            <td class="px-4 py-3">
-                                                <button class="text-blue-500 hover:text-blue-700 mr-2">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="text-red-500 hover:text-red-700">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-4 py-3">14 Jun 2025</td>
-                                            <td class="px-4 py-3">
-                                                <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Pengeluaran</span>
-                                            </td>
-                                            <td class="px-4 py-3">Konsumsi Rapat</td>
-                                            <td class="px-4 py-3 font-medium text-red-600">Rp 249.500</td>
-                                            <td class="px-4 py-3">Rapat yayasan</td>
-                                            <td class="px-4 py-3">
-                                                <button class="text-blue-500 hover:text-blue-700 mr-2">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="text-red-500 hover:text-red-700">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot id="transaction-totals" class="bg-gray-50 font-bold">
-                                        <tr>
-                                            <td colspan="3" class="px-4 py-3 text-right">Total:</td>
-                                            <td class="px-4 py-3 text-green-600" id="total-income">Rp 0</td>
-                                            <td class="px-4 py-3 text-red-600" id="total-expense">Rp 0</td>
-                                            <td class="px-4 py-3 text-blue-600" id="total-balance">Rp 0</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
+                    
+                    <!-- Table Wrapper with fixed height and scroll -->
+                    <div class="overflow-auto border rounded-lg h-96">
+                        <table class="min-w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 cursor-pointer" id="sortDate">Tanggal ⇅</th>
+                                    <th scope="col" class="px-6 py-3">Kategori</th>
+                                    <th scope="col" class="px-6 py-3">Jenis</th>
+                                    <th scope="col" class="px-6 py-3 text-right">Jumlah</th>
+                                    <th scope="col" class="px-6 py-3">Keterangan</th>
+                                    <th scope="col" class="px-6 py-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionHistory" class="bg-white">
+                                <!-- Rows will be populated by JS -->
+                                <tr><td colspan="6" class="text-center p-8">Menunggu otentikasi...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
+                    <div id="filteredTotal" class="text-right font-bold mt-2 pr-1 flex-shrink-0">Total Filter: Rp 0</div>
                 </div>
 
-                <!-- Right Column -->
-                <div class="space-y-8">
-                    <!-- Quick Stats -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h2 class="text-xl font-bold mb-6 text-gray-800 flex items-center">
-                            <i class="fas fa-chart-line mr-2 text-blue-500"></i> Statistik Cepat
-                        </h2>
-                        <div class="space-y-4">
-                            <div>
-                                <p class="text-gray-600">Pengeluaran Tertinggi</p>
-                                <p class="font-bold text-lg" id="highest-expense">-</p>
-                            </div>
-                            <div>
-                                <p class="text-gray-600">Pengeluaran Terkecil</p>
-                                <p class="font-bold text-lg" id="lowest-expense">-</p>
-                            </div>
-                            <div>
-                                <p class="text-gray-600">Pemasukan Tertinggi</p>
-                                <p class="font-bold text-lg" id="highest-income">-</p>
-                            </div>
-                            <div>
-                                <p class="text-gray-600">Jumlah Transaksi</p>
-                                <p class="font-bold text-lg" id="transaction-count">0 Transaksi</p>
-                            </div>
-                        </div>
+                <!-- Chart Card -->
+                <div class="card p-6 rounded-2xl shadow-lg fade-in" style="animation-delay: 0.4s;">
+                    <h3 class="text-xl font-bold mb-2">Analisis Diagram</h3>
+                    <p class="text-sm text-gray-600 mb-4">Visualisasi kategori berdasarkan data yang difilter di atas.</p>
+                    <div class="w-full h-64 md:h-72 flex items-center justify-center">
+                        <canvas id="categoryChart"></canvas>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <script>
-        // Dynamic category selection
-        function updateCategories() {
-            const typeSelect = document.getElementById('transaction-type');
-            const categorySelect = document.getElementById('transaction-category');
-            const selectedType = typeSelect.value;
-            
-            categorySelect.innerHTML = '<option value="">Pilih Kategori</option>';
-            
-            if (selectedType === 'Pemasukan') {
-                const incomeCategories = ['SPP SDAQ', 'SPI SDAQ', 'SPP RAQ', 'SPI RAQ', 'SPP RABW', 'SPI RABW', 'Lain-lain'];
-                incomeCategories.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat;
-                    option.textContent = cat;
-                    categorySelect.appendChild(option);
-                });
-            } else if (selectedType === 'Pengeluaran') {
-                const expenseCategories = ['Gaji Pengurus', 'Konsumsi Rapat', 'Wakaf', 'Iuran', 'Lain-lain'];
-                expenseCategories.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat;
-                    option.textContent = cat;
-                    categorySelect.appendChild(option);
-                });
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg transition-opacity duration-300 opacity-0">
+        Transaksi berhasil disimpan!
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYdIt3e3VHn5wQjjKu6ziwcZ5q4mFMCys",
+            authDomain: "coba1-24185.firebaseapp.com",
+            projectId: "coba1-24185",
+            storageBucket: "coba1-24185.firebasestorage.app",
+            messagingSenderId: "692582138754",
+            appId: "1:692582138754:web:f6ab024184c34b6bedc59b",
+            measurementId: "G-YW9GN13LL0"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Global state
+        let allTransactions = [];
+        let previousYearBalance = 0; // Holds the carry-over balance
+        let unsubscribe; // To detach the listener when changing years
+        let currentChart = null;
+        let dateSortOrder = 'desc'; // 'asc' or 'desc'
+
+        // DOM Elements
+        const fiscalYearSelect = document.getElementById('fiscalYear');
+        const loadReportBtn = document.getElementById('loadReportBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importFile = document.getElementById('importFile');
+        const transactionForm = document.getElementById('transactionForm');
+        const transactionTypeSelect = document.getElementById('transactionType');
+        const categorySelect = document.getElementById('category');
+        const amountInput = document.getElementById('amount');
+        const dateInput = document.getElementById('date');
+        const descriptionInput = document.getElementById('description');
+        const historyBody = document.getElementById('transactionHistory');
+        
+        const prevYearBalanceEl = document.getElementById('prevYearBalance');
+        const totalIncomeEl = document.getElementById('totalIncome');
+        const totalExpenseEl = document.getElementById('totalExpense');
+        const currentBalanceEl = document.getElementById('currentBalance');
+
+        const searchInput = document.getElementById('searchInput');
+        const filterTypeSelect = document.getElementById('filterType');
+        const filterStartDateInput = document.getElementById('filterStartDate');
+        const filterEndDateInput = document.getElementById('filterEndDate');
+        const filteredTotalEl = document.getElementById('filteredTotal');
+        const sortDateHeader = document.getElementById('sortDate');
+
+        // Edit Modal Elements
+        const editModal = document.getElementById('editModal');
+        const editTransactionForm = document.getElementById('editTransactionForm');
+        const editTransactionId = document.getElementById('editTransactionId');
+        const editTransactionType = document.getElementById('editTransactionType');
+        const editCategory = document.getElementById('editCategory');
+        const editAmount = document.getElementById('editAmount');
+        const editDate = document.getElementById('editDate');
+        const editDescription = document.getElementById('editDescription');
+        const editModalCancel = document.getElementById('editModalCancel');
+
+
+        // Categories definition
+        const categories = {
+            pemasukan: ['SPI SDAQ', 'SPP SDAQ', 'SPI RAQ', 'SPP RAQ', 'SPI RABW', 'SPP RABW', 'Lain-lain'],
+            pengeluaran: ['Wakaf', 'Konsumsi Rapat', 'Gaji Pengurus', 'Iuran', 'Admin bank', 'Lain-lain']
+        };
+
+        // Color mapping for the chart
+        const categoryColors = {
+            'SPI SDAQ': { background: 'rgba(76, 175, 80, 0.7)', border: 'rgba(56, 142, 60, 1)' },
+            'SPP SDAQ': { background: 'rgba(139, 195, 74, 0.7)', border: 'rgba(104, 159, 56, 1)' },
+            'SPI RAQ': { background: 'rgba(33, 150, 243, 0.7)', border: 'rgba(25, 118, 210, 1)' },
+            'SPP RAQ': { background: 'rgba(100, 181, 246, 0.7)', border: 'rgba(66, 165, 245, 1)' },
+            'SPI RABW': { background: 'rgba(255, 193, 7, 0.7)', border: 'rgba(251, 140, 0, 1)' },
+            'SPP RABW': { background: 'rgba(255, 213, 79, 0.7)', border: 'rgba(255, 167, 38, 1)' },
+            'Wakaf': { background: 'rgba(244, 67, 54, 0.7)', border: 'rgba(211, 47, 47, 1)' },
+            'Konsumsi Rapat': { background: 'rgba(233, 30, 99, 0.7)', border: 'rgba(194, 24, 91, 1)' },
+            'Gaji Pengurus': { background: 'rgba(156, 39, 176, 0.7)', border: 'rgba(123, 31, 162, 1)' },
+            'Iuran': { background: 'rgba(255, 152, 0, 0.7)', border: 'rgba(245, 124, 0, 1)' },
+            'Admin bank': { background: 'rgba(96, 125, 139, 0.7)', border: 'rgba(69, 90, 100, 1)' },
+            'Lain-lain-pemasukan': { background: 'rgba(0, 188, 212, 0.7)', border: 'rgba(0, 151, 167, 1)' },
+            'Lain-lain-pengeluaran': { background: 'rgba(158, 158, 158, 0.7)', border: 'rgba(97, 97, 97, 1)' },
+            'default': { background: 'rgba(189, 189, 189, 0.7)', border: 'rgba(117, 117, 117, 1)' }
+        };
+
+
+        // --- ERROR HANDLING ---
+        function showPermissionError(error) {
+            console.error("Firestore Permission Error:", error);
+            const permissionErrorOverlay = document.getElementById('permissionErrorOverlay');
+            if (permissionErrorOverlay) {
+                permissionErrorOverlay.classList.remove('hidden');
             }
-            
-            categorySelect.disabled = !selectedType;
+            document.querySelectorAll('form, button').forEach(el => {
+                el.disabled = true;
+                if(el.tagName === 'BUTTON') el.classList.add('bg-gray-400', 'cursor-not-allowed');
+            });
         }
 
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyALI0mFJo4yrjaedMqfJOB4ddTJYuBvRHE",
-            authDomain: "lapkeu-145e1.firebaseapp.com",
-            databaseURL: "https://lapkeu-145e1-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "lapkeu-145e1",
-            storageBucket: "lapkeu-145e1.firebasestorage.app",
-            messagingSenderId: "39079051298",
-            appId: "1:39079051298:web:f58f9d9dea19e190da8a7b",
-            measurementId: "G-JMKDRMKW33"
-        };
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        
-        // Set current date
-        const now = new Date();
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', options);
+        function handleFirestoreError(error) {
+            if (error.code === 'permission-denied') {
+                showPermissionError(error);
+            } else {
+                console.error("An unexpected Firestore error occurred:", error);
+                showToast("Terjadi galat saat mengakses data.", true);
+            }
+        }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Excel export functionality
-            document.getElementById('export-excel').addEventListener('click', function() {
-                // Create HTML table data
-                let tableHTML = `
-                    <table border="1">
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Jenis</th>
-                                <th>Kategori</th>
-                                <th>Jumlah</th>
-                                <th>Keterangan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>14 Jun 2025</td>
-                                <td>Pengeluaran</td>
-                                <td>Gaji Pengurus</td>
-                                <td>Rp 4.000.000</td>
-                                <td>Bisyarah</td>
-                            </tr>
-                            <tr>
-                                <td>14 Jun 2025</td>
-                                <td>Pengeluaran</td>
-                                <td>Konsumsi Rapat</td>
-                                <td>Rp 249.500</td>
-                                <td>Rapat yayasan</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                `;
-                
-                // Create download link
-                const blob = new Blob([tableHTML], {type: 'application/vnd.ms-excel'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'laporan-keuangan.xls';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+
+        // --- MAIN STARTUP FUNCTION ---
+        async function main() {
+            try {
+                await signInAnonymously(auth);
+                console.log("Authentication successful.");
+                init();
+            } catch (error) {
+                console.error("Firebase Authentication Failed:", error);
+                const errorOverlay = document.getElementById('errorOverlay');
+                const errorCodeEl = document.getElementById('errorCode');
+                if (errorOverlay && errorCodeEl) {
+                    errorCodeEl.textContent = error.code || 'N/A';
+                    errorOverlay.classList.remove('hidden');
+                }
+                document.getElementById('transactionForm').querySelectorAll('input, select, button, textarea').forEach(el => {
+                    el.disabled = true;
+                    el.classList.add('bg-gray-200');
+                });
+            }
+        }
+
+        // --- INITIALIZATION ---
+        function init() {
+            populateFiscalYears();
+            updateCategoryOptions(transactionTypeSelect, categorySelect);
+            setupEventListeners();
+            setupModalListeners();
+            dateInput.value = new Date().toISOString().split('T')[0];
+            setupFirestoreListener(fiscalYearSelect.value);
+        }
+
+        function populateFiscalYears() {
+            for (let i = 0; i < 5; i++) {
+                const startYear = 2024 + i;
+                const endYear = startYear + 1;
+                const yearString = `${startYear}-${endYear}`;
+                const option = document.createElement('option');
+                option.value = yearString;
+                option.textContent = yearString;
+                fiscalYearSelect.appendChild(option);
+            }
+        }
+
+        function setupEventListeners() {
+            transactionTypeSelect.addEventListener('change', () => updateCategoryOptions(transactionTypeSelect, categorySelect));
+            transactionForm.addEventListener('submit', handleFormSubmit);
+            loadReportBtn.addEventListener('click', () => setupFirestoreListener(fiscalYearSelect.value));
+            exportBtn.addEventListener('click', exportToExcel);
+            importBtn.addEventListener('click', () => importFile.click());
+            importFile.addEventListener('change', handleFileImport);
+            
+            [searchInput, filterTypeSelect, filterStartDateInput, filterEndDateInput].forEach(el => {
+                el.addEventListener('input', renderFilteredData);
+                el.addEventListener('change', renderFilteredData);
+            });
+            
+            sortDateHeader.addEventListener('click', () => {
+                dateSortOrder = dateSortOrder === 'desc' ? 'asc' : 'desc';
+                renderFilteredData();
             });
 
-            // Form submission
-            document.getElementById('transaction-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const form = e.target;
-                const amount = parseInt(form.querySelector('input[type="number"]').value);
-                
-                // Validate form
-                if (!form.querySelector('#transaction-type').value) {
-                    alert('Pilih jenis transaksi terlebih dahulu');
-                    return;
+            editTransactionType.addEventListener('change', () => updateCategoryOptions(editTransactionType, editCategory));
+            editTransactionForm.addEventListener('submit', handleEditFormSubmit);
+            editModalCancel.addEventListener('click', () => editModal.classList.add('hidden'));
+        }
+        
+        // --- BALANCE CALCULATION (More efficient version) ---
+        async function calculatePreviousYearsBalance(targetYear) {
+            const allYearOptions = Array.from(fiscalYearSelect.options).map(opt => opt.value);
+            const targetIndex = allYearOptions.indexOf(targetYear);
+
+            if (targetIndex <= 0) return 0;
+
+            const yearsToQuery = allYearOptions.slice(0, targetIndex);
+            let totalBalance = 0;
+
+            const promises = yearsToQuery.map(year => {
+                const collectionPath = `laporan-keuangan/${year}/transaksi`;
+                return getDocs(collection(db, collectionPath));
+            });
+
+            try {
+                const snapshots = await Promise.all(promises);
+                snapshots.forEach(snapshot => {
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.type === 'pemasukan') {
+                            totalBalance += data.amount;
+                        } else if (data.type === 'pengeluaran') {
+                            totalBalance -= data.amount;
+                        }
+                    });
+                });
+                return totalBalance;
+            } catch (error) {
+                handleFirestoreError(error);
+                return 0;
+            }
+        }
+
+
+        // --- FIREBASE & DATA HANDLING ---
+        async function setupFirestoreListener(year) {
+            if (unsubscribe) unsubscribe();
+
+            loadReportBtn.disabled = true;
+            loadReportBtn.textContent = 'Memuat...';
+            historyBody.innerHTML = `<tr><td colspan="6" class="text-center p-8">Menghitung saldo dan memuat data untuk tahun ${year}...</td></tr>`;
+            ['prevYearBalanceEl', 'totalIncomeEl', 'totalExpenseEl', 'currentBalanceEl'].forEach(elId => {
+                document.getElementById(elId.slice(0, -2)).textContent = '...';
+            });
+            prevYearBalanceEl.textContent = 'Menghitung...';
+
+            previousYearBalance = await calculatePreviousYearsBalance(year);
+
+            allTransactions = [];
+            updateSummary();
+            renderFilteredData();
+
+            const collectionPath = `laporan-keuangan/${year}/transaksi`;
+            const q = query(collection(db, collectionPath));
+            
+            unsubscribe = onSnapshot(q, (querySnapshot) => {
+                allTransactions = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const date = data.date.toDate ? data.date.toDate() : new Date(data.date);
+                    allTransactions.push({ id: doc.id, ...data, date });
+                });
+                renderFilteredData();
+                updateSummary();
+                loadReportBtn.disabled = false;
+                loadReportBtn.textContent = 'Tampilkan';
+            }, (error) => {
+                handleFirestoreError(error);
+                historyBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500">Gagal memuat data. Periksa aturan keamanan Anda.</td></tr>`;
+                loadReportBtn.disabled = false;
+                loadReportBtn.textContent = 'Tampilkan';
+            });
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const transaction = {
+                type: transactionTypeSelect.value,
+                category: categorySelect.value,
+                amount: parseFloat(amountInput.value),
+                date: new Date(dateInput.value),
+                description: descriptionInput.value.trim(),
+                createdAt: new Date()
+            };
+            if (isNaN(transaction.amount) || transaction.amount <= 0) {
+                showToast("Jumlah harus berupa angka positif.", true);
+                return;
+            }
+            try {
+                const selectedYear = fiscalYearSelect.value;
+                const collectionPath = `laporan-keuangan/${selectedYear}/transaksi`;
+                await addDoc(collection(db, collectionPath), transaction);
+                showToast("Transaksi berhasil disimpan!");
+                transactionForm.reset();
+                dateInput.value = new Date().toISOString().split('T')[0];
+                updateCategoryOptions(transactionTypeSelect, categorySelect);
+            } catch (error) {
+                handleFirestoreError(error);
+            }
+        }
+        
+        async function handleEditFormSubmit(e) {
+            e.preventDefault();
+            const id = editTransactionId.value;
+            const updatedData = {
+                type: editTransactionType.value,
+                category: editCategory.value,
+                amount: parseFloat(editAmount.value),
+                date: new Date(editDate.value),
+                description: editDescription.value.trim(),
+            };
+            if (isNaN(updatedData.amount) || updatedData.amount <= 0) {
+                showToast("Jumlah harus berupa angka positif.", true);
+                return;
+            }
+            try {
+                const selectedYear = fiscalYearSelect.value;
+                const docRef = doc(db, `laporan-keuangan/${selectedYear}/transaksi`, id);
+                await updateDoc(docRef, updatedData);
+                showToast("Transaksi berhasil diperbarui!");
+                editModal.classList.add('hidden');
+            } catch (error) {
+                handleFirestoreError(error);
+            }
+        }
+
+        async function deleteTransaction(id) {
+            showConfirmDialog("Apakah Anda yakin ingin menghapus transaksi ini?", async () => {
+                try {
+                    const selectedYear = fiscalYearSelect.value;
+                    const docPath = `laporan-keuangan/${selectedYear}/transaksi/${id}`;
+                    await deleteDoc(doc(db, docPath));
+                    showToast("Transaksi berhasil dihapus.");
+                } catch (error) {
+                    handleFirestoreError(error);
                 }
-                
-                if (!form.querySelector('#transaction-category').value) {
-                    alert('Pilih kategori transaksi terlebih dahulu');
-                    return;
+            });
+        }
+
+        // --- UI & RENDERING ---
+        function updateCategoryOptions(typeSelectElement, categorySelectElement) {
+            const selectedType = typeSelectElement.value;
+            const options = categories[selectedType];
+            categorySelectElement.innerHTML = '';
+            options.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categorySelectElement.appendChild(option);
+            });
+        }
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+        }
+
+        function renderFilteredData() {
+            let filtered = [...allTransactions];
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(t => 
+                    t.category.toLowerCase().includes(searchTerm) ||
+                    (t.description && t.description.toLowerCase().includes(searchTerm))
+                );
+            }
+            const filterType = filterTypeSelect.value;
+            if (filterType !== 'all') {
+                filtered = filtered.filter(t => t.type === filterType);
+            }
+            const startDate = filterStartDateInput.value ? new Date(filterStartDateInput.value) : null;
+            const endDate = filterEndDateInput.value ? new Date(filterEndDateInput.value) : null;
+            if (startDate) {
+                startDate.setHours(0, 0, 0, 0);
+                filtered = filtered.filter(t => t.date >= startDate);
+            }
+            if (endDate) {
+                endDate.setHours(23, 59, 59, 999);
+                filtered = filtered.filter(t => t.date <= endDate);
+            }
+            filtered.sort((a, b) => dateSortOrder === 'asc' ? a.date - b.date : b.date - a.date);
+            renderHistoryTable(filtered);
+            renderChart(filtered);
+            updateFilteredTotal(filtered);
+        }
+
+        function renderHistoryTable(transactions) {
+            historyBody.innerHTML = '';
+            if (transactions.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="6" class="text-center p-8">Tidak ada data transaksi untuk periode ini.</td></tr>`;
+                return;
+            }
+            transactions.forEach(t => {
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                const typeClass = t.type === 'pemasukan' ? 'text-green-600' : 'text-red-600';
+                const typeText = t.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">${t.date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                    <td class="px-6 py-4">${t.category}</td>
+                    <td class="px-6 py-4">${typeText}</td>
+                    <td class="px-6 py-4 text-right whitespace-nowrap">${formatCurrency(t.amount)}</td>
+                    <td class="px-6 py-4">${t.description || '-'}</td>
+                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                        <button data-id="${t.id}" class="edit-btn font-medium text-blue-600 hover:underline mr-3">Edit</button>
+                        <button data-id="${t.id}" class="delete-btn font-medium text-red-600 hover:underline">Hapus</button>
+                    </td>
+                `;
+                historyBody.appendChild(row);
+            });
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => deleteTransaction(e.target.dataset.id));
+            });
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => openEditModal(e.target.dataset.id));
+            });
+        }
+        
+        function updateSummary() {
+            const income = allTransactions.filter(t => t.type === 'pemasukan').reduce((sum, t) => sum + t.amount, 0);
+            const expense = allTransactions.filter(t => t.type === 'pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+            
+            const prevBalance = previousYearBalance;
+
+            prevYearBalanceEl.textContent = formatCurrency(prevBalance);
+            totalIncomeEl.textContent = formatCurrency(income);
+            totalExpenseEl.textContent = formatCurrency(expense);
+            currentBalanceEl.textContent = formatCurrency(prevBalance + income - expense);
+        }
+        
+        function updateFilteredTotal(transactions) {
+            const total = transactions.reduce((sum, t) => {
+                if (t.type === 'pemasukan') return sum + t.amount;
+                if (t.type === 'pengeluaran') return sum - t.amount;
+                return sum;
+            }, 0);
+            filteredTotalEl.textContent = `Total Filter: ${formatCurrency(total)}`;
+        }
+
+        function renderChart(transactions) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            if(transactions.length === 0) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+            const dataByCat = transactions.reduce((acc, t) => {
+                if (!acc[t.category]) {
+                    acc[t.category] = { amount: 0, type: t.type };
                 }
-                
-                if (isNaN(amount) || amount <= 0) {
-                    alert('Masukkan jumlah transaksi yang valid');
-                    return;
+                acc[t.category].amount += t.amount;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(dataByCat);
+            const data = labels.map(label => dataByCat[label].amount);
+            
+            const backgroundColors = labels.map(label => {
+                const type = dataByCat[label].type;
+                let key = (label === 'Lain-lain') ? `Lain-lain-${type}` : label;
+                return categoryColors[key]?.background || categoryColors.default.background;
+            });
+            
+            const borderColors = labels.map(label => {
+                const type = dataByCat[label].type;
+                let key = (label === 'Lain-lain') ? `Lain-lain-${type}` : label;
+                return categoryColors[key]?.border || categoryColors.default.border;
+            });
+
+            currentChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah (Rp)',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.label || ''}: ${formatCurrency(context.parsed)}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = toast.className.replace(/bg-green-500|bg-red-500/g, '');
+            toast.classList.add(isError ? 'bg-red-500' : 'bg-green-500');
+            toast.classList.remove('opacity-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        // --- EXPORT TO EXCEL ---
+        function exportToExcel() {
+            const year = fiscalYearSelect.value;
+            const income = allTransactions.filter(t => t.type === 'pemasukan').reduce((sum, t) => sum + t.amount, 0);
+            const expense = allTransactions.filter(t => t.type === 'pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+            const finalBalance = previousYearBalance + income - expense;
+
+            const summaryData = [
+                ["Laporan Keuangan Yayasan Miftahus Sunnah"],
+                [`Tahun Anggaran: ${year}`],
+                [],
+                ["Saldo Tahun Lalu", previousYearBalance],
+                ["Total Pemasukan", income],
+                ["Total Pengeluaran", expense],
+                ["Saldo Akhir", finalBalance]
+            ];
+
+            const detailsData = allTransactions.map(t => ({
+                Tanggal: t.date.toLocaleDateString('id-ID'),
+                Jenis: t.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran',
+                Kategori: t.category,
+                Keterangan: t.description || '-',
+                Jumlah: t.amount
+            }));
+
+            const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
+            const ws_details = XLSX.utils.json_to_sheet(detailsData);
+            
+            ws_summary['!cols'] = [{ wch: 40 }, { wch: 20 }];
+            ws_details['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 40 }, { wch: 20 }];
+            
+            ws_summary['B4'].z = 'Rp#,##0';
+            ws_summary['B5'].z = 'Rp#,##0';
+            ws_summary['B6'].z = 'Rp#,##0';
+            ws_summary['B7'].z = 'Rp#,##0';
+            
+            for (let i = 0; i < detailsData.length; i++) {
+                const cellRef = XLSX.utils.encode_cell({c: 4, r: i + 1});
+                if(ws_details[cellRef]) {
+                    ws_details[cellRef].z = 'Rp#,##0';
+                }
+            }
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws_summary, "Ringkasan");
+            XLSX.utils.book_append_sheet(wb, ws_details, "Rincian Transaksi");
+
+            XLSX.writeFile(wb, `Laporan_Keuangan_${year.replace('/', '-')}.xlsx`);
+            showToast("Laporan berhasil diekspor!");
+        }
+
+        // --- IMPORT FROM EXCEL ---
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    await processAndSaveImportedData(jsonData);
+                } catch (error) {
+                    console.error("Error processing Excel file:", error);
+                    showToast("Gagal memproses file Excel. Pastikan format benar.", true);
+                } finally {
+                    // Reset file input to allow re-uploading the same file
+                    importFile.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function processAndSaveImportedData(data) {
+            const selectedYear = fiscalYearSelect.value;
+            const collectionPath = `laporan-keuangan/${selectedYear}/transaksi`;
+            let importedCount = 0;
+            let errorCount = 0;
+
+            const promises = data.map(row => {
+                // Basic validation
+                const amount = parseFloat(row.Jumlah);
+                const type = (row.Jenis || '').toLowerCase();
+                const category = row.Kategori;
+                const date = row.Tanggal instanceof Date ? row.Tanggal : new Date(row.Tanggal);
+
+                if (!date || isNaN(date.getTime()) || isNaN(amount) || !type || !category) {
+                    console.warn("Skipping invalid row:", row);
+                    errorCount++;
+                    return Promise.resolve(); // Resolve to not break Promise.all
                 }
                 
                 const transaction = {
-                    date: form.querySelector('input[type="date"]').value,
-                    type: form.querySelector('#transaction-type').value,
-                    category: form.querySelector('#transaction-category').value,
+                    type: type,
+                    category: category,
                     amount: amount,
-                    description: form.querySelector('textarea').value,
-                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                    date: date,
+                    description: row.Keterangan || '',
+                    createdAt: new Date()
                 };
-                
-                // Check if we're editing or creating new
-                const editId = form.querySelector('input[name="editId"]')?.value;
-                
-                if (editId) {
-                    // Update existing transaction
-                    database.ref('transactions/' + editId).update(transaction)
-                    .then(() => {
-                        alert('Transaksi berhasil diperbarui!');
-                        form.reset();
-                        form.querySelector('#transaction-category').disabled = true;
-                        if (form.querySelector('input[name="editId"]')) {
-                            form.removeChild(form.querySelector('input[name="editId"]'));
-                        }
-                        loadTransactions();
-                    })
-                    .catch(error => {
-                        console.error("Error updating transaction: ", error);
-                        alert('Gagal memperbarui transaksi');
-                    });
-                } else {
-                    // Create new transaction
-                    database.ref('transactions').push(transaction)
-                    .then(() => {
-                        alert('Transaksi berhasil disimpan!');
-                        form.reset();
-                        form.querySelector('#transaction-category').disabled = true;
-                        loadTransactions();
-                    })
-                    .catch(error => {
-                        console.error("Error saving transaction: ", error);
-                        alert('Gagal menyimpan transaksi');
-                    });
-                }
-            });
-            // Load transactions from Firebase
-            function loadTransactions() {
-                database.ref('transactions').once('value')
-                    .then(snapshot => {
-                        const transactions = snapshot.val();
-                        const tbody = document.querySelector('.transaction-table tbody');
-                        tbody.innerHTML = '';
-                        
-                        let totalIncome = 0;
-                        let totalExpense = 0;
-                        
-                        if (transactions) {
-                            const filteredTransactions = filterTransactions(transactions);
-                            filteredTransactions.forEach(([key, value]) => {
-                                // Calculate totals
-                                if (value.type === 'Pemasukan') {
-                                    totalIncome += value.amount;
-                                } else if (value.type === 'Pengeluaran') {
-                                    totalExpense += value.amount;
-                                }
-                                
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td class="px-4 py-3">${new Date(value.date).toLocaleDateString('id-ID')}</td>
-                                    <td class="px-4 py-3">
-                                        <span class="px-2 py-1 ${value.type === 'Pemasukan' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} rounded-full text-xs">
-                                            ${value.type}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3">${value.category}</td>
-                                    <td class="px-4 py-3 font-medium ${value.type === 'Pemasukan' ? 'text-green-600' : 'text-red-600'}">
-                                        Rp ${value.amount.toLocaleString('id-ID')}
-                                    </td>
-                                    <td class="px-4 py-3">${value.description || '-'}</td>
-                                    <td class="px-4 py-3">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2" onclick="editTransaction('${key}')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="text-red-500 hover:text-red-700" onclick="deleteTransaction('${key}')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                `;
-                                tbody.appendChild(row);
-                            });
-                        }
-                        
-                        // Calculate quick stats
-                        let highestExpense = { amount: 0, category: '' };
-                        let lowestExpense = { amount: Infinity, category: '' };
-                        let highestIncome = { amount: 0, category: '' };
-                        let transactionCount = 0;
 
-                        if (transactions) {
-                            const filteredTransactions = filterTransactions(transactions);
-                            transactionCount = filteredTransactions.length;
-                            
-                            filteredTransactions.forEach(([key, transaction]) => {
-                                if (transaction.type === 'Pengeluaran') {
-                                    if (transaction.amount > highestExpense.amount) {
-                                        highestExpense = {
-                                            amount: transaction.amount,
-                                            category: transaction.category
-                                        };
-                                    }
-                                    if (transaction.amount < lowestExpense.amount) {
-                                        lowestExpense = {
-                                            amount: transaction.amount,
-                                            category: transaction.category
-                                        };
-                                    }
-                                } else if (transaction.type === 'Pemasukan') {
-                                    if (transaction.amount > highestIncome.amount) {
-                                        highestIncome = {
-                                            amount: transaction.amount,
-                                            category: transaction.category
-                                        };
-                                    }
-                                }
-                            });
-                        }
-
-                        // Update quick stats
-                        document.getElementById('highest-expense').textContent = 
-                            highestExpense.amount > 0 ? 
-                            `${highestExpense.category} - Rp ${highestExpense.amount.toLocaleString('id-ID')}` : '-';
-                        
-                        document.getElementById('lowest-expense').textContent = 
-                            lowestExpense.amount < Infinity ? 
-                            `${lowestExpense.category} - Rp ${lowestExpense.amount.toLocaleString('id-ID')}` : '-';
-                        
-                        document.getElementById('highest-income').textContent = 
-                            highestIncome.amount > 0 ? 
-                            `${highestIncome.category} - Rp ${highestIncome.amount.toLocaleString('id-ID')}` : '-';
-                        
-                        document.getElementById('transaction-count').textContent = 
-                            `${transactionCount} Transaksi`;
-
-                        // Update filtered totals
-                        document.getElementById('total-income').textContent = 
-                            `Rp ${totalIncome.toLocaleString('id-ID')}`;
-                        document.getElementById('total-expense').textContent = 
-                            `Rp ${totalExpense.toLocaleString('id-ID')}`;
-                        document.getElementById('total-balance').textContent = 
-                            `Rp ${(totalIncome - totalExpense).toLocaleString('id-ID')}`;
-
-                        // Update summary cards
-                        document.querySelector('.stats-container div:nth-child(1) h2').textContent = 
-                            `Rp ${totalIncome.toLocaleString('id-ID')}`;
-                        document.querySelector('.stats-container div:nth-child(2) h2').textContent = 
-                            `Rp ${totalExpense.toLocaleString('id-ID')}`;
-                        document.querySelector('.stats-container div:nth-child(3) h2').textContent = 
-                            `Rp ${(totalIncome - totalExpense).toLocaleString('id-ID')}`;
-                            
-                    })
-                    .catch(error => {
-                        console.error("Error loading transactions: ", error);
-                    });
-            }
-
-            // Initialize filter categories
-            function initFilterCategories() {
-                const filterCategory = document.getElementById('filter-category');
-                const incomeCategories = ['SPP SDAQ', 'SPI SDAQ', 'SPP RAQ', 'SPI RAQ', 'SPP RABW', 'SPI RABW', 'Lain-lain'];
-                const expenseCategories = ['Gaji Pengurus', 'Konsumsi Rapat', 'Wakaf', 'Iuran', 'Lain-lain'];
-                
-                // Clear existing options except first
-                while (filterCategory.options.length > 1) {
-                    filterCategory.remove(1);
-                }
-                
-                // Add all categories
-                incomeCategories.concat(expenseCategories).forEach(cat => {
-                    if (!filterCategory.querySelector(`option[value="${cat}"]`)) {
-                        const option = document.createElement('option');
-                        option.value = cat;
-                        option.textContent = cat;
-                        filterCategory.appendChild(option);
-                    }
-                });
-            }
-
-            // Filter transactions
-            function filterTransactions(transactions) {
-                const filterType = document.getElementById('filter-type').value;
-                const filterCategory = document.getElementById('filter-category').value;
-                const sortOrder = document.getElementById('sort-date').value;
-                const searchKeyword = document.getElementById('search-keyword').value.toLowerCase();
-                
-                let filtered = Object.entries(transactions).filter(([key, value]) => {
-                    const typeMatch = !filterType || value.type === filterType;
-                    const categoryMatch = !filterCategory || value.category === filterCategory;
-                    const searchMatch = !searchKeyword || 
-                        (value.description && value.description.toLowerCase().includes(searchKeyword)) || 
-                        (value.category && value.category.toLowerCase().includes(searchKeyword));
-                    
-                    return typeMatch && categoryMatch && searchMatch;
-                });
-
-                // Sort by date
-                filtered.sort((a, b) => {
-                    const dateA = new Date(a[1].date);
-                    const dateB = new Date(b[1].date);
-                    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-                });
-
-                return filtered;
-            }
-
-            // Update filter categories when type changes
-            document.getElementById('filter-type').addEventListener('change', function() {
-                const type = this.value;
-                const filterCategory = document.getElementById('filter-category');
-                
-                // Clear existing options except first
-                while (filterCategory.options.length > 1) {
-                    filterCategory.remove(1);
-                }
-                
-                if (type === 'Pemasukan') {
-                    const incomeCategories = ['SPP SDAQ', 'SPI SDAQ', 'SPP RAQ', 'SPI RAQ', 'SPP RABW', 'SPI RABW', 'Lain-lain'];
-                    incomeCategories.forEach(cat => {
-                        const option = document.createElement('option');
-                        option.value = cat;
-                        option.textContent = cat;
-                        filterCategory.appendChild(option);
-                    });
-                } else if (type === 'Pengeluaran') {
-                    const expenseCategories = ['Gaji Pengurus', 'Konsumsi Rapat', 'Wakaf', 'Iuran', 'Lain-lain'];
-                    expenseCategories.forEach(cat => {
-                        const option = document.createElement('option');
-                        option.value = cat;
-                        option.textContent = cat;
-                        filterCategory.appendChild(option);
-                    });
-                } else {
-                    initFilterCategories();
-                }
+                importedCount++;
+                return addDoc(collection(db, collectionPath), transaction);
             });
 
-            // Reset filter
-            document.getElementById('reset-filter').addEventListener('click', function() {
-                document.getElementById('filter-type').value = '';
-                document.getElementById('filter-category').value = '';
-                document.getElementById('sort-date').value = 'newest';
-                document.getElementById('search-keyword').value = '';
-                initFilterCategories();
-                loadTransactions();
-            });
-
-            // Apply filter when any filter/sort/search changes
-            document.getElementById('filter-type').addEventListener('change', loadTransactions);
-            document.getElementById('filter-category').addEventListener('change', loadTransactions);
-            document.getElementById('sort-date').addEventListener('change', loadTransactions);
-            document.getElementById('search-keyword').addEventListener('input', loadTransactions);
-
-            // Initialize filter categories
-            initFilterCategories();
-            
-            // Load transactions when page loads
-            loadTransactions();
-        });
-
-        // Delete transaction function
-        function deleteTransaction(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
-                database.ref('transactions/' + id).remove()
-                    .then(() => {
-                        alert('Transaksi berhasil dihapus');
-                        loadTransactions();
-                    })
-                    .catch(error => {
-                        console.error("Error deleting transaction: ", error);
-                        alert('Gagal menghapus transaksi');
-                    });
+            try {
+                await Promise.all(promises);
+                if (importedCount > 0) {
+                    showToast(`${importedCount} transaksi berhasil diimpor!`);
+                }
+                if (errorCount > 0) {
+                    showToast(`${errorCount} baris data tidak valid dan dilewati.`, true);
+                }
+            } catch (error) {
+                handleFirestoreError(error);
             }
         }
 
-        // Edit transaction function
-        function editTransaction(id) {
-            database.ref('transactions/' + id).once('value')
-                .then(snapshot => {
-                    const transaction = snapshot.val();
-                    const form = document.getElementById('transaction-form');
-                    
-                    // Populate form
-                    form.querySelector('#transaction-type').value = transaction.type;
-                    updateCategories();
-                    setTimeout(() => {
-                        form.querySelector('#transaction-category').value = transaction.category;
-                    }, 100);
-                    form.querySelector('input[type="number"]').value = transaction.amount;
-                    form.querySelector('input[type="date"]').value = transaction.date;
-                    form.querySelector('textarea').value = transaction.description || '';
-                    
-                    // Add hidden field for edit mode
-                    let editField = form.querySelector('input[name="editId"]');
-                    if (!editField) {
-                        editField = document.createElement('input');
-                        editField.type = 'hidden';
-                        editField.name = 'editId';
-                        form.appendChild(editField);
-                    }
-                    editField.value = id;
-                    
-                    // Scroll to form
-                    form.scrollIntoView({ behavior: 'smooth' });
-                })
-                .catch(error => {
-                    console.error("Error loading transaction: ", error);
-                    alert('Gagal memuat data transaksi');
-                });
+
+        // --- MODAL HANDLING ---
+        let confirmCallback = null;
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmModalText = document.getElementById('confirmModalText');
+        const confirmModalOk = document.getElementById('confirmModalOk');
+        const confirmModalCancel = document.getElementById('confirmModalCancel');
+
+        function showConfirmDialog(message, callback) {
+            confirmModalText.textContent = message;
+            confirmCallback = callback;
+            confirmModal.classList.remove('hidden');
         }
+
+        function hideConfirmDialog() {
+            confirmModal.classList.add('hidden');
+            confirmCallback = null;
+        }
+        
+        function openEditModal(id) {
+            const transactionToEdit = allTransactions.find(t => t.id === id);
+            if (!transactionToEdit) return;
+            editTransactionId.value = id;
+            editTransactionType.value = transactionToEdit.type;
+            updateCategoryOptions(editTransactionType, editCategory);
+            editCategory.value = transactionToEdit.category;
+            editAmount.value = transactionToEdit.amount;
+            editDate.value = transactionToEdit.date.toISOString().split('T')[0];
+            editDescription.value = transactionToEdit.description || '';
+            editModal.classList.remove('hidden');
+        }
+
+        function setupModalListeners() {
+            confirmModalOk.addEventListener('click', () => {
+                if (confirmCallback) {
+                    confirmCallback();
+                }
+                hideConfirmDialog();
+            });
+            confirmModalCancel.addEventListener('click', hideConfirmDialog);
+        }
+
+        // Run the app
+        main();
     </script>
 </body>
 </html>
